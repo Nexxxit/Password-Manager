@@ -1,73 +1,109 @@
-# React + TypeScript + Vite
+# Password Manager (React + TypeScript + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Небольшое SPA-приложение для хранения паролей с генератором, поиском и подтверждениями действий.
 
-Currently, two official plugins are available:
+## Возможности
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Управление списком сервисов:
+  - Добавление через модальное окно с валидацией
+  - Удаление через модальное окно с подтверждением
+  - Поиск по названию сервиса с дебаунсом (по умолчанию 300 мс)
+- Генератор паролей:
+  - Длина пароля
+  - Наборы: буквы, цифры, спецсимволы
+  - Регистр букв: нижний, верхний, случайный
+  - Пользовательский набор символов (при вводе этого поля остальные переключатели, кроме длины, блокируются)
+  - Сгенерированный пароль вставляется прямо в поле пароля модалки
+- Копирование паролей в буфер обмена
+- Глобальное переключение видимости паролей
+- Симуляция запросов на «сервер» (50% успех/ошибка) при добавлении и удалении
+- Сохранение данных в браузер:
+  - localStorage
+  - sessionStorage
+  - cookies
+  - Загрузка данных при инициализации из любого доступного хранилища
 
-## React Compiler
+## Технологии
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19, TypeScript, Vite
+- Tailwind 
+- ESLint 
 
-## Expanding the ESLint configuration
+## Требования
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js 18+ 
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Установка и запуск
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+```bash
+npm install
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+npm run dev
+
+npm run build
+
+npm run preview
+
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+После `npm run dev` приложение доступно на `http://localhost:5173` (порт может отличаться; смотрите вывод Vite).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Структура проекта (основное)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+  app/
+    App.tsx
+    providers/
+  assets/
+    icons/
+  features/
+    passwordGenerator/
+      components/PasswordGenerator.tsx
+      lib/{generatePassword, charsets, shuffle}.ts
+      types.ts
+    service/
+      components/{ServiceList, ServiceListItem, ServiceSearch, AddServiceModal}.tsx
+      lib/validators.tsx
+  shared/
+    lib/{mockApi.ts, storage.ts}
+    ui/
+      Button/
+      CopyButton/
+      Modal/
+      PasswordVisibilityToggle/
+      Input/
+```
+
+## Хранилища и поведение
+
+- При старте список сервисов считывается из браузерных хранилищ (приоритет: localStorage → sessionStorage → cookies).
+- При успешном добавлении/удалении запись синхронно сохраняется/удаляется во всех трёх хранилищах.
+- В учебных целях пароли сохраняются в открытом виде.
+
+## Симуляция «серверных» запросов
+
+Функция `mockApi<T>(data, delay)` из `src/shared/lib/mockApi.ts` возвращает промис, который:
+- через `delay` мс завершится
+- с вероятностью 50% выполнится успешно (`resolve(data)`), иначе — с ошибкой (`reject(Error)`)
+
+Используется при:
+- добавлении сервиса в модалке
+- удалении сервиса в модалке подтверждения
+
+При успехе данные сохраняются/удаляются и модалка закрывается. При ошибке показывается сообщение, данные не меняются.
+
+## Поиск
+
+Компонент `ServiceSearch` отправляет запрос фильтрации с дебаунсом (по умолчанию 300 мс) через проп `onSearch`. В `ServiceList` список фильтруется по `serviceName` (регистронезависимо).
+
+## Подсказки по разработке
+
+- Алиас `@` указывает на `src/` (см. Vite config и TS config)
+- Стилизацию компонентов можно расширять Tailwind‑классами
+- Логику легко заменить на реальный бэкенд: вместо `mockApi` подключить HTTP‑клиент и сохранить совместимый интерфейс
+
+## Лицензия
+
+MIT
