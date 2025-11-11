@@ -3,7 +3,7 @@ import {Button} from "@/shared/ui/Button/Button.tsx";
 import {useState} from "react";
 import {CheckIcon} from "@/assets/icons/CheckIcon.tsx";
 
-type CopyButton = {text: string}
+type CopyButton = { text: string }
 
 const CopyButton = ({text}: CopyButton) => {
     const [copied, setCopied] = useState(false);
@@ -13,7 +13,7 @@ const CopyButton = ({text}: CopyButton) => {
             await navigator.clipboard.writeText(String(text));
             setCopied(true);
             setTimeout(() => setCopied(false), 1500);
-        } catch (e: Error) {
+        } catch (e: unknown) {
             console.error('Не удалось скопировать пароль', e)
         }
     }
